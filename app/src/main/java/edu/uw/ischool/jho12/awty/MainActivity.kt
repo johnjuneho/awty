@@ -103,7 +103,6 @@ fun AwtyApp() {
                     delay(1000)
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                     println("$phoneNumber: $message")
-                    println("")
                     delay((interval.toLongOrNull() ?: 1) * 60000)
                 }
             }
