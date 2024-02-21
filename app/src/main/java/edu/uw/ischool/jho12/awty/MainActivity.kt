@@ -20,6 +20,13 @@ import kotlinx.coroutines.delay
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.telephony.SmsManager
+import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +42,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 0 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else {
+            Toast.makeText(this, "SMS permission denied", Toast.LENGTH_LONG).show()
+        }
+    }
+
 }
 
 @Composable
@@ -97,13 +112,17 @@ fun AwtyApp() {
         }
 
         if (isStarted && isIntervalValid && isPhoneNumberValid) {
-            LaunchedEffect(key1 = phoneNumber, key2 = interval) {
+            LaunchedEffect(key1 = phoneNumber, key2 = interval, key3 = isStarted) {
                 while (isStarted) {
-                    Toast.makeText(context, "Texting $phoneNumber", Toast.LENGTH_SHORT).show()
-                    delay(1000)
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                    println("$phoneNumber: $message")
-                    delay((interval.toLongOrNull() ?: 1) * 60000)
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(context as Activity, arrayOf(Manifest.permission.SEND_SMS), 0)
+                    } else {
+                        SmsManager.getDefault().sendTextMessage(phoneNumber, null, message, null, null)
+                        Log.d("AwtyApp", "SMS sent to $phoneNumber: $message")
+                    }
+
+                    val delayTimeMillis = (interval.toLongOrNull() ?: 1) * 60000
+                    delay(delayTimeMillis)
                 }
             }
         }
